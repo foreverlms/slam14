@@ -19,7 +19,7 @@ void ch3_5(Eigen::MatrixXd &xd){
     }
 }
 
-int main(int argc,char* argv[]){
+int main(int argc,char * argv[]){
 
 //    //第五题
 //    Eigen::MatrixXd test_matrix = Eigen::MatrixXd::Random(5,5);
