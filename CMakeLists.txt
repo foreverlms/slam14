@@ -30,6 +30,13 @@ find_package(PCL REQUIRED COMPONENT common io)
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ch5)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ch5)
 add_executable(joinMap ch5/joinMap.cpp)
 target_link_libraries(joinMap ${OpenCV_LIBS} ${PCL_LIBRARIES})
+
+
+find_package( Ceres REQUIRED )
+include_directories( ${CERES_INCLUDE_DIRS} )
+
+add_executable(curve_fitting ch6/ceres_curve_fitting/main.cpp)
+target_link_libraries(curve_fitting ${OpenCV_LIBS} ${CERES_LIBRARIES})
