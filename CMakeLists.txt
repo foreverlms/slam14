@@ -3,7 +3,8 @@ project(Slam14)
 
 set(CMAKE_CXX_STANDARD 14)
 #指定Sophus package路径
-set(Sophus_DIR ch4/useSophus/Sophus/build)
+set(Sophus_DIR ch4/useSophus/Sophus/build )
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/ch6/g2o_curve_fitting/cmake_modules)
 
 include_directories(ch3/useEigen)
 
@@ -40,3 +41,12 @@ include_directories( ${CERES_INCLUDE_DIRS} )
 
 add_executable(curve_fitting ch6/ceres_curve_fitting/main.cpp)
 target_link_libraries(curve_fitting ${OpenCV_LIBS} ${CERES_LIBRARIES})
+
+find_package( G2O REQUIRED )
+include_directories(
+        ${G2O_INCLUDE_DIRS}
+#        "/usr/include/eigen3"
+)
+
+add_executable(g2o_curve_fitting ch6/g2o_curve_fitting/main.cpp)
+target_link_libraries(g2o_curve_fitting ${OpenCV_LIBS} g2o_core g2o_stuff)
