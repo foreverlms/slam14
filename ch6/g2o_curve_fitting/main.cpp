@@ -21,7 +21,7 @@ using namespace std;
 class CurveFittingVertex:public g2o::BaseVertex<3,Eigen::Vector3d>{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    virtual void setToOriginTmpl(){
+    virtual void setToOriginImpl(){
         _estimate << 0,0,0;
     }
 
@@ -31,7 +31,7 @@ public:
 
     virtual bool read(istream& in){}
 
-    virtual bool write(ostream& out){}
+    virtual bool write(ostream& out) const {}
 };
 
 //曲线模型的边
@@ -59,29 +59,58 @@ int main(int argc,char** argv){
     vector<double> x_data,y_data;
 
     cout <<"正在生成真实数据..." << endl;
-
     for (int i = 0; i < N; ++i) {
         double x = i / 100.0;
         x_data.push_back(x);
-        y_data.push_back(exp(abc[0] * x * x + abc[1] * x +abc[2])+rng.gaussian(w_sigma));
-
+        y_data.push_back(exp(a * x * x + b * x +c)+rng.gaussian(w_sigma));
     }
 
     //矩阵块
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<3,1>> Block;
     Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
 //    unique_ptr<Block::LinearSolverType> lin(linearSolver);
-    //TODO 这里为啥一直出错？
-    Block* solver_ptr = new Block(linearSolver);
 
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    Block* solver_ptr = new Block(unique_ptr<Block::LinearSolverType>(linearSolver));
+
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(unique_ptr<Block>(solver_ptr));
 
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
     optimizer.setVerbose(true);
 
+    //增加顶点
     CurveFittingVertex* v = new CurveFittingVertex();
+    v->setEstimate(Eigen::Vector3d(0,0,0));
+    v->setId(0);
+    //在曲线拟合问题中只有一个顶点，即估计的参数abc组成的向量
+    optimizer.addVertex(v);
 
+    //增加边
+    for (int j = 0; j < N; ++j) {
+        //设定优化边的x
+        CurveFittingEdge* edge = new CurveFittingEdge(x_data[j]);
+        edge->setId(j);
+        edge->setVertex(0,v);
+        //设定y的观测值，即实际值
+        edge->setMeasurement(y_data[j]);
+        //信息矩阵：协方差矩阵的逆
+        //TODO 这里信息矩阵是什么意思？
+        edge->setInformation(Eigen::Matrix<double,1,1>::Identity()*1/(w_sigma * w_sigma));
+        optimizer.addEdge(edge);
+    }
+
+    cout << "开始进行优化" << endl;
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    optimizer.initializeOptimization();
+    optimizer.optimize(100);
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> past_time = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+
+    cout << "优化时间：" << past_time.count() << "秒。" << endl;
+
+    Eigen::Vector3d abc_ = v->estimate();
+
+    cout << "估计参数a,b,c分别为：" << abc_.transpose() << endl;
 
     return 0;
 }
