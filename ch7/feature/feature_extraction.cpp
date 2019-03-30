@@ -23,23 +23,23 @@ int main(int argc,char** argv){
     cv::Mat descriptors_1,descriptors_2;
     //TODO 这里先这样改吧
 
-    cv::Ptr<cv::FeatureDetector> detector = cv::FeatureDetector::create("ORB");
-    cv::Ptr<cv::DescriptorExtractor> descriptor = cv::DescriptorExtractor::create("ORB");
-    cout << (detector == NULL) << endl;
-//    cv::Ptr<cv::ORB> orb = cv::ORB::create("test");
-//    //通过ORB算法检测Oriented FAST角点
-//    orb->detect(img_1,kp_1);
-//    orb->detect(img_2,kp_2);
+//    cv::Ptr<cv::FeatureDetector> detector = cv::FeatureDetector::create("ORB");
+//    cv::Ptr<cv::DescriptorExtractor> descriptor = cv::DescriptorExtractor::create("ORB");
+
+    cv::Ptr<cv::ORB> orb = cv::ORB::create(500,1.2f,8,31,0,2,cv::ORB::HARRIS_SCORE,31,20);
+    //通过ORB算法检测Oriented FAST角点
+    orb->detect(img_1,kp_1);
+    orb->detect(img_2,kp_2);
+
+    //计算出相应角点的描述子
+    orb->compute(img_1,kp_1,descriptors_1);
+    orb->compute(img_2,kp_2,descriptors_2);
+
+//    detector->detect(img_1,kp_1);
+//    detector->detect(img_2,kp_2);
 //
-//    //计算出相应角点的描述子
-//    orb->compute(img_1,kp_1,descriptors_1);
-//    orb->compute(img_2,kp_2,descriptors_2);
-
-    detector->detect(img_1,kp_1);
-    detector->detect(img_2,kp_2);
-
-    descriptor->compute(img_1,kp_1,descriptors_1);
-    descriptor->compute(img_2,kp_2,descriptors_2);
+//    descriptor->compute(img_1,kp_1,descriptors_1);
+//    descriptor->compute(img_2,kp_2,descriptors_2);
 
     cv::Mat outimag1;
     cv::namedWindow("ORB",cv::WINDOW_NORMAL);
@@ -49,6 +49,8 @@ int main(int argc,char** argv){
     vector<cv::DMatch> matches;
     cv::BFMatcher matcher(cv::NORM_HAMMING);
     matcher.match(descriptors_1,descriptors_2,matches);
+
+    cout << "共找出" << matches.size() << "组匹配点" << endl;
 
     double min_dist = 1000, max_dist = 0;
 

@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
+
+set(OpenCV_DIR /opt/opencv344/share/OpenCV)
+
 project(Slam14)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -9,8 +12,10 @@ find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 #OpenCV路径
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3.4 REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+
+message(STATUS "路径:${OpenCV_INCLUDE_DIRS}")
 
 #PCL路径
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -63,3 +68,6 @@ include_directories(ch3/useEigen)
 
 add_executable(feature_extraction ch7/feature/feature_extraction.cpp)
 target_link_libraries(feature_extraction ${OpenCV_LIBS})
+
+add_executable(pose_estimation ch7/feature/pose_estimation_2d2d.cpp)
+target_link_libraries(pose_estimation ${OpenCV_LIBS})
