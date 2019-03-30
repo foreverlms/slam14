@@ -68,54 +68,55 @@ void feature_extraction(cv::Mat& img_1,cv::Mat& img_2,vector<cv::KeyPoint>& kp_1
     matcher.match(descriptors_1,descriptors_2,matches);
 }
 
-cv::Point2f pixel2cam(cv::Point2f& p,cv::Mat& K){
-    return cv::Point2d( (p.x - K.at<double>(0,2)) / K.at<double>(0,1),
+cv::Point2d pixel2cam(const cv::Point2f& p,cv::Mat& K){
+    return cv::Point2d( (p.x - K.at<double>(0,2)) / K.at<double>(0,0),
                         (p.y - K.at<double>(1,2)) / K.at<double>(1,1)
             );
 }
 
-int main(int argc, char** argv){
-    if (argc != 3)
-    {
-        cout << "请确保传入两张图像来做特征提取与匹配demo:feature_extraction img1_path img2_path" << endl;
-        return 1;
-    }
+//在构建target:triangulation时要把这个main函数入口注释掉
 
-    cv::Mat img_1 = cv::imread(argv[1],CV_LOAD_IMAGE_COLOR);
-    cv::Mat img_2 = cv::imread(argv[2],CV_LOAD_IMAGE_COLOR);
-
-    vector<cv::KeyPoint> kp_1,kp_2;
-    vector<cv::DMatch> matches;
-    cout << "matches.size:" << matches.size() << endl;
-    feature_extraction(img_1,img_2,kp_1,kp_2,matches);
-
-    cout << "一共找到了" << matches.size() << "组匹配点" << endl;
-
-    cv::Mat R ,t;
-
-    pose_estimation_2d2d(kp_1,kp_2,matches,R,t);
-
-    //验证E = t^R*scale;
-
-    //t_x即是t取反对称之后的矩阵
-    cv::Mat t_x = (cv::Mat_<double>(3,3) <<
-            0,-t.at<double>(2,0),t.at<double>(1,0),
-            t.at<double>(2,0),0,-t.at<double>(0,0),
-            -t.at<double>(1,0),t.at<double>(0,0),0);
-    cout << "t^R=" << endl;
-    cout << t_x * R << endl;
-
-    cv::Mat K = (cv::Mat_<double> (3,3) << 520.9,0,325.1,0,521.0,249.7,0,0,1);
-    for (cv::DMatch m : matches){
-        cv::Point2d pt1 = pixel2cam(kp_1[1].pt,K);
-        cv::Mat y1 = (cv::Mat_<double>(3,1) << pt1.x,pt1.y,1);
-        cv::Point2d pt2 = pixel2cam(kp_2[m.trainIdx].pt,K);
-        cv::Mat y2 = (cv::Mat_<double>(3,1) << pt2.x,pt2.y,1);
-
-        cv::Mat d = y2.t() * t_x * R * y1;
-        cout << "对极约束为："<< endl << d << endl;
-    }
-
-    return 0;
-
-}
+//int main(int argc, char** argv){
+//    if (argc != 3)
+//    {
+//        cout << "请确保传入两张图像来做特征提取与匹配demo:feature_extraction img1_path img2_path" << endl;
+//        return 1;
+//    }
+//
+//    cv::Mat img_1 = cv::imread(argv[1],CV_LOAD_IMAGE_COLOR);
+//    cv::Mat img_2 = cv::imread(argv[2],CV_LOAD_IMAGE_COLOR);
+//
+//    vector<cv::KeyPoint> kp_1,kp_2;
+//    vector<cv::DMatch> matches;
+//    cout << "matches.size:" << matches.size() << endl;
+//    feature_extraction(img_1,img_2,kp_1,kp_2,matches);
+//
+//    cout << "一共找到了" << matches.size() << "组匹配点" << endl;
+//
+//    cv::Mat R ,t;
+//
+//    pose_estimation_2d2d(kp_1,kp_2,matches,R,t);
+//
+//    //验证E = t^R*scale;
+//
+//    //t_x即是t取反对称之后的矩阵
+//    cv::Mat t_x = (cv::Mat_<double>(3,3) <<
+//            0,-t.at<double>(2,0),t.at<double>(1,0),
+//            t.at<double>(2,0),0,-t.at<double>(0,0),
+//            -t.at<double>(1,0),t.at<double>(0,0),0);
+//    cout << "t^R=" << endl;
+//    cout << t_x * R << endl;
+//
+//    cv::Mat K = (cv::Mat_<double> (3,3) << 520.9,0,325.1,0,521.0,249.7,0,0,1);
+//    for (cv::DMatch m : matches){
+//        cv::Point2d pt1 = pixel2cam(kp_1[m.queryIdx].pt,K);
+//        cv::Mat y1 = (cv::Mat_<double>(3,1) << pt1.x,pt1.y,1);
+//        cv::Point2d pt2 = pixel2cam(kp_2[m.trainIdx].pt,K);
+//        cv::Mat y2 = (cv::Mat_<double>(3,1) << pt2.x,pt2.y,1);
+//
+//        cv::Mat d = y2.t() * t_x * R * y1;
+//        cout << "对极约束为："<< endl << d << endl;
+//    }
+//
+//    return 0;
+//}

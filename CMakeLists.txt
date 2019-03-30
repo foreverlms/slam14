@@ -66,8 +66,11 @@ include_directories(ch3/useEigen)
 #add_executable(g2o_curve_fitting ch6/g2o_curve_fitting/main.cpp)
 #target_link_libraries(g2o_curve_fitting ${OpenCV_LIBS} g2o_core g2o_stuff)
 
-add_executable(feature_extraction ch7/feature/feature_extraction.cpp)
-target_link_libraries(feature_extraction ${OpenCV_LIBS})
+#add_executable(feature_extraction ch7/feature/feature_extraction.cpp)
+#target_link_libraries(feature_extraction ${OpenCV_LIBS})
+#
+#add_executable(pose_estimation ch7/feature/pose_estimation_2d2d.cpp)
+#target_link_libraries(pose_estimation ${OpenCV_LIBS})
 
-add_executable(pose_estimation ch7/feature/pose_estimation_2d2d.cpp)
-target_link_libraries(pose_estimation ${OpenCV_LIBS})
+add_executable(triangulation ch7/feature/triangulation.cpp ch7/feature/pose_estimation_2d2d.cpp )
+target_link_libraries(triangulation ${OpenCV_LIBS})
