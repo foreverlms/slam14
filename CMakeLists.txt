@@ -4,9 +4,12 @@ set(OpenCV_DIR /opt/opencv344/share/OpenCV)
 
 project(Slam14)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
 set(CMAKE_CXX_STANDARD 14)
 #指定Sophus package路径
 set(Sophus_DIR ch4/useSophus/Sophus/build )
+
 #list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/ch6/g2o_curve_fitting/cmake_modules)
 find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
@@ -14,8 +17,6 @@ include_directories(${Sophus_INCLUDE_DIRS})
 #OpenCV路径
 find_package(OpenCV 3.4 REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
-
-message(STATUS "路径:${OpenCV_INCLUDE_DIRS}")
 
 #PCL路径
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -32,6 +33,9 @@ include_directories(
         ${G2O_INCLUDE_DIRS}
         #        "/usr/include/eigen3"
 )
+
+find_package(CSparse REQUIRED)
+include_directories(${CSPARSE_INCLUDE_DIR})
 
 include_directories(ch3/useEigen)
 
@@ -75,5 +79,6 @@ include_directories(ch3/useEigen)
 #add_executable(triangulation ch7/feature/triangulation.cpp ch7/feature/pose_estimation_2d2d.cpp )
 #target_link_libraries(triangulation ${OpenCV_LIBS})
 
-add_executable(pose_estimation_3d2d ch7/feature/pose_estimation_3d2d.cpp ch7/feature/feature_extraction.cpp ch7/feature/pose_estimation_2d2d.cpp)
-target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBS} g2o_core g2o_stuff)
+
+add_executable(pose_estimation_3d2d ch7/feature/pose_estimation_3d2d.cpp ch7/feature/pose_estimation_2d2d.cpp)
+target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBS} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
