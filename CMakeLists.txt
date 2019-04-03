@@ -80,5 +80,8 @@ include_directories(ch3/useEigen)
 #target_link_libraries(triangulation ${OpenCV_LIBS})
 
 
-add_executable(pose_estimation_3d2d ch7/feature/pose_estimation_3d2d.cpp ch7/feature/pose_estimation_2d2d.cpp)
-target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBS} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
+#add_executable(pose_estimation_3d2d ch7/feature/pose_estimation_3d2d.cpp ch7/feature/pose_estimation_2d2d.cpp)
+#target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBS} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
+
+add_executable(pose_estimation_3d3d ch7/feature/pose_estimation_3d3d.cpp ch7/feature/pose_estimation_3d2d.cpp ch7/feature/pose_estimation_2d2d.cpp)
+target_link_libraries(pose_estimation_3d3d ${OpenCV_LIBS} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
