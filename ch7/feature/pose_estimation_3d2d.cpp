@@ -35,6 +35,7 @@ void bundleAdjustment(const vector<cv::Point3f> points_3d,
 {
     //位姿李代数维度为6，地标landmark维度为3
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,3>> Block;
+    //CSPARSE是一个求解线性问题的矩阵库
     Block::LinearSolverType* lineasolver = new g2o::LinearSolverCSparse<Block::PoseMatrixType>();
     Block* solver_ptr = new Block(unique_ptr<Block::LinearSolverType>(lineasolver));
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(unique_ptr<Block>(solver_ptr));
