@@ -86,5 +86,8 @@ include_directories(ch3/useEigen)
 # add_executable(pose_estimation_3d3d ch7/feature/pose_estimation_3d3d.cpp ch7/feature/pose_estimation_3d2d.cpp ch7/feature/pose_estimation_2d2d.cpp)
 # target_link_libraries(pose_estimation_3d3d ${OpenCV_LIBS} g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
 
-add_executable(lkflow ch8/LKFlow/useLK.cpp)
-target_link_libraries(lkflow ${OpenCV_LIBS})
+# add_executable(lkflow ch8/LKFlow/useLK.cpp)
+# target_link_libraries(lkflow ${OpenCV_LIBS})
+
+add_executable(direct_sparse ch8/direct/direct_sparse.cpp)
+target_link_libraries(direct_sparse ${OpenCV_LIBS} g2o_core g2o_stuff g2o_solver_csparse g2o_types_sba g2o_csparse_extension ${CSPARSE_LIBRARY})
