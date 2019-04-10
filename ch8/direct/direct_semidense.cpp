@@ -25,6 +25,8 @@ using namespace std;
  * 这个书里的练习估计的是连续十张图片中的第二到第九张相对于第一张图片的位姿变换，而不是连续的前后帧间的比较！
  * 
  */
+
+
 /**
  * 测量值，包含坐标与灰度
  */
@@ -56,7 +58,7 @@ bool poseEstimationDirect(const vector<Measurement> &measurements, cv::Mat *gray
 
 class EdgeSE3ProjectDirect : public g2o::BaseUnaryEdge<1, double, g2o::VertexSE3Expmap>
 {
-  public:
+public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     EdgeSE3ProjectDirect() {}
@@ -137,13 +139,13 @@ class EdgeSE3ProjectDirect : public g2o::BaseUnaryEdge<1, double, g2o::VertexSE3
     virtual bool read(std::istream &in) {}
     virtual bool write(std::ostream &out) const {}
 
-  public:
+public:
     //x_world_是p在世界坐标系下的位置，在这里就是第一帧图片里的相机坐标系
     Eigen::Vector3d x_world_;
     float cx_ = 0, cy_ = 0, fx_ = 0, fy_ = 0;
     cv::Mat *image_ = nullptr;
 
-  protected:
+protected:
     inline float getPixelValue(float x, float y)
     {
         uchar *data = &image_->data[int(y) * image_->step + int(x)];
@@ -155,31 +157,33 @@ class EdgeSE3ProjectDirect : public g2o::BaseUnaryEdge<1, double, g2o::VertexSE3
     }
 };
 
-bool poseEstimationDirect(const vector<Measurement> &measurements, cv::Mat *gray, Eigen::Matrix3f &intrinsics, Eigen::Isometry3d &Tcw){
+bool poseEstimationDirect(const vector<Measurement> &measurements, cv::Mat *gray, Eigen::Matrix3f &intrinsics, Eigen::Isometry3d &Tcw)
+{
     //求解优化的是T的李代数，因此是一个6维列向量
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,1>> DirectBlock;
-    DirectBlock::LinearSolverType* linearSolver = new g2o::LinearSolverDense<DirectBlock::PoseMatrixType>();
-    DirectBlock* solver_ptr = new DirectBlock(unique_ptr<DirectBlock::LinearSolverType>(linearSolver));
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(unique_ptr<DirectBlock>(solver_ptr));
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 1>> DirectBlock;
+    DirectBlock::LinearSolverType *linearSolver = new g2o::LinearSolverDense<DirectBlock::PoseMatrixType>();
+    DirectBlock *solver_ptr = new DirectBlock(unique_ptr<DirectBlock::LinearSolverType>(linearSolver));
+    g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(unique_ptr<DirectBlock>(solver_ptr));
 
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
     optimizer.setVerbose(true);
 
-    g2o::VertexSE3Expmap* pose = new g2o::VertexSE3Expmap();
+    g2o::VertexSE3Expmap *pose = new g2o::VertexSE3Expmap();
     //设定初始预估值
-    pose->setEstimate(g2o::SE3Quat(Tcw.rotation(),Tcw.translation()));
+    pose->setEstimate(g2o::SE3Quat(Tcw.rotation(), Tcw.translation()));
     pose->setId(0);
 
     optimizer.addVertex(pose);
 
-    int id =1;
-    for (Measurement m : measurements){
-        EdgeSE3ProjectDirect* edge = new EdgeSE3ProjectDirect(m.pos_world,intrinsics(0,0),intrinsics(1,1),intrinsics(0,2),intrinsics(1,2),gray);
-        edge->setVertex(0,pose);
+    int id = 1;
+    for (Measurement m : measurements)
+    {
+        EdgeSE3ProjectDirect *edge = new EdgeSE3ProjectDirect(m.pos_world, intrinsics(0, 0), intrinsics(1, 1), intrinsics(0, 2), intrinsics(1, 2), gray);
+        edge->setVertex(0, pose);
         //设定灰度测量值，用于与第index张图像灰度值相减来求误差
         edge->setMeasurement(m.grayscale);
-        edge->setInformation(Eigen::Matrix<double,1,1>::Identity());
+        edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
         edge->setId(id++);
         optimizer.addEdge(edge);
     }
@@ -192,13 +196,14 @@ bool poseEstimationDirect(const vector<Measurement> &measurements, cv::Mat *gray
 }
 int main(int argc, char **argv)
 {
-    if (argc != 2) {
+    if (argc != 2)
+    {
         std::cout << "请为程序提供RGBD数据集路径" << '\n';
         return 1;
     }
 
     //让随机数更逼真
-    srand((unsigned int) time(0));
+    srand((unsigned int)time(0));
 
     string path_to_dataset = argv[1];
     string associate_file = path_to_dataset + "/associate.txt";
@@ -220,7 +225,7 @@ int main(int argc, char **argv)
 
     //世界->相机的坐标系变换矩阵，这里以第一帧图像的相机坐标系为世界坐标系,接下来的一帧图片为相机坐标系
     //就是第一张图片->第index帧图片的坐标变换Tcw
-    Eigen::Isometry3d Tcw = Eigen::Isometry3d::Identity();//默认为单位阵
+    Eigen::Isometry3d Tcw = Eigen::Isometry3d::Identity(); //默认为单位阵
 
     cv::Mat prev_color;
 
@@ -236,21 +241,24 @@ int main(int argc, char **argv)
         cv::cvtColor(color, gray, cv::COLOR_BGR2GRAY);
         if (index == 0)
         {
-            // 对第一帧提取FAST特征点
-            vector<cv::KeyPoint> keypoints;
-            cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create();
-            detector->detect(color, keypoints);
-            for (auto kp : keypoints)
+            //对第一张图片提取出像素梯度较大的点
+            for (size_t x = 10; x < gray.cols-10; x++)
             {
-                // 去掉邻近边缘处的点
-                if (kp.pt.x < 20 || kp.pt.y < 20 || (kp.pt.x + 20) > color.cols || (kp.pt.y + 20) > color.rows)
-                    continue;
-                ushort d = depth.ptr<ushort>(cvRound(kp.pt.y))[cvRound(kp.pt.x)];
-                if (d == 0)
-                    continue;
-                Eigen::Vector3d p3d = project2Dto3D(kp.pt.x, kp.pt.y, d, fx, fy, cx, cy, depth_scale);
-                float grayscale = float(gray.ptr<uchar>(cvRound(kp.pt.y))[cvRound(kp.pt.x)]);
-                measurements.push_back(Measurement(p3d, grayscale));
+                for (size_t y = 10; y < gray.rows-10; y++)
+                {
+                    Eigen::Vector2d delta(
+                        gray.ptr(y)[x + 1] - gray.ptr<uchar>(y)[x - 1],//x方向梯度，deltaX=2这里没有除以2，估计是只是来估量梯度大小，而不是来计算
+                        gray.ptr<uchar>(y + 1)[x] - gray.ptr<uchar>(y - 1)[x]);
+                    //delta的二范数(模)，来衡量灰度梯度
+                    if (delta.norm() < 50)
+                        continue;
+                    ushort d = depth.ptr<ushort>(y)[x];
+                    if(d == 0)
+                        continue;
+                    Eigen::Vector3d p_3d = project2Dto3D(x,y,d,fx,fy,cx,cy,depth_scale);
+                    float grayScale = float(gray.ptr<uchar>(y)[x]);
+                    measurements.push_back(Measurement(p_3d,grayScale));
+                }
             }
             //记住第一张原始图片
             prev_color = color.clone();
@@ -262,7 +270,8 @@ int main(int argc, char **argv)
         chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
         chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
         cout << "直接法估计耗时：" << time_used.count() << "秒。" << endl;
-        cout << "（第一张图片到当前图片的坐标变换矩阵）Tcw=" << endl << Tcw.matrix() << endl;
+        cout << "（第一张图片到当前图片的坐标变换矩阵）Tcw=" << endl
+             << Tcw.matrix() << endl;
 
         // 画出特征点做对比，都是与第一张图片里的特征点位置对比
         cv::Mat img_show(color.rows * 2, color.cols, CV_8UC3);
@@ -279,13 +288,13 @@ int main(int argc, char **argv)
             Eigen::Vector2d pixel_now = project3Dto2D(p2(0, 0), p2(1, 0), p2(2, 0), fx, fy, cx, cy);
             if (pixel_now(0, 0) < 0 || pixel_now(0, 0) >= color.cols || pixel_now(1, 0) < 0 || pixel_now(1, 0) >= color.rows)
                 continue;
-            //随机颜色
-            float b = 255 * float(rand()) / RAND_MAX;
-            float g = 255 * float(rand()) / RAND_MAX;
-            float r = 255 * float(rand()) / RAND_MAX;
+
+            float b = 0;
+            float g = 250;
+            float r = 0;
             cv::circle(img_show, cv::Point2d(pixel_prev(0, 0), pixel_prev(1, 0)), 8, cv::Scalar(b, g, r), 2);
             cv::circle(img_show, cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), 8, cv::Scalar(b, g, r), 2);
-            cv::line(img_show, cv::Point2d(pixel_prev(0, 0), pixel_prev(1, 0)), cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), cv::Scalar(b, g, r), 1);
+            //cv::line(img_show, cv::Point2d(pixel_prev(0, 0), pixel_prev(1, 0)), cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), cv::Scalar(b, g, r), 1);
         }
         cv::imshow("结果", img_show);
         cv::waitKey(0);
