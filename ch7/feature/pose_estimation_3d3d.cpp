@@ -105,14 +105,13 @@ void bundleAdjustment(const vector<cv::Point3f> pts1,
     optimizer.addVertex(pose);
 
     int index = 1;
-
-    // for (const auto p : pts1){
-    //     g2o::VertexSBAPointXYZ* point = new g2o::VertexSBAPointXYZ();
-    //     point->setId(index++);
-    //     point->setEstimate(Eigen::Vector3d(p.x,p.y,p.z));
-    //     point->setMarginalized(true);
-    //     optimizer.addVertex(point);
-    // }
+    for (const auto p : pts2){
+        g2o::VertexSBAPointXYZ* point = new g2o::VertexSBAPointXYZ();
+        point->setId(index++);
+        point->setEstimate(Eigen::Vector3d(p.x,p.y,p.z));
+        point->setMarginalized(true);
+        optimizer.addVertex(point);
+    }
 
     g2o::CameraParameters *camera = new g2o::CameraParameters(K.at<double>(0, 0), Eigen::Vector2d(K.at<double>(0, 2), K.at<double>(1, 2)), 0);
 
@@ -126,9 +125,11 @@ void bundleAdjustment(const vector<cv::Point3f> pts1,
         //TODO:这里没看懂，不是应该pts2才是观测量吗？下面measurement用的反而是pts1
         EdgeProjectXYZRGBDPoseOnly *edge = new EdgeProjectXYZRGBDPoseOnly(Eigen::Vector3d(pts2[i].x,pts2[i].y,pts2[i].z));
         edge->setId(index);
+        edge->setVertex(0,optimizer.vertex(index+1));
+        edge->setVertex(1,optimizer.vertex(0));
         edge->setMeasurement(Eigen::Vector3d(pts1[i].x,pts1[i].y,pts1[i].z));
         edge->setInformation(Eigen::Matrix3d::Identity()*1e-4);
-
+        index++;
         optimizer.addEdge(edge);
     }
 
