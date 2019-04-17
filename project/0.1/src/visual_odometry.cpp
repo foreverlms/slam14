@@ -8,6 +8,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
+#include <myslam/g2o_types.h>
+#include <g2o/core/block_solver.h>
+#include <g2o/solvers/dense/linear_solver_dense.h>
+#include <g2o/core/optimization_algorithm_levenberg.h>
 
 namespace myslam {
     VisualOdometry::VisualOdometry() : state(INITIALIZING), ref(nullptr), curr(nullptr), map(new Map()), num_lost(0),
@@ -135,6 +139,36 @@ namespace myslam {
 
         Tcr_estimated = SE3(SO3(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0)),
                             Eigen::Vector3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
+
+        typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,2>> Block;
+        Block::LinearSolverType* linear_slover_type = new g2o::LinearSolverDense<Block::PoseMatrixType>();
+        Block* solve_ptr = new Block(unique_ptr<Block::LinearSolverType>(linear_slover_type));
+        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(unique_ptr<Block>(solve_ptr));
+        g2o::SparseOptimizer optimizer;
+        optimizer.setAlgorithm(solver);
+
+        g2o::VertexSE3Expmap* pose = new g2o::VertexSE3Expmap();
+        pose->setId(0);
+        pose->setEstimate(g2o::SE3Quat(Tcr_estimated.rotation_matrix(),Tcr_estimated.translation()));
+        optimizer.addVertex(pose);
+
+        for (size_t i = 0; i < inliers.rows; i++)
+        {
+            int index = inliers.at<int>(i,0);
+            EdgeProjectXYZ2UVPoseOnly* edge = new EdgeProjectXYZ2UVPoseOnly();
+            edge->setId(index);
+            edge->setVertex(0,pose);
+            edge->camera = curr->camera.get();
+            edge->point = Vector3d(pts3D[index].x,pts3D[index].y,pts3D[index].z);
+            edge->setMeasurement(Eigen::Vector2d(pts2D[index].x, pts2D[index].y));
+            edge->setInformation(Eigen::Matrix2d::Identity());
+
+            optimizer.addEdge(edge);
+        }
+        optimizer.initializeOptimization();
+        optimizer.optimize(10);
+
+        Tcr_estimated = SE3(pose->estimate().rotation(), pose->estimate().translation());
     }
 
     void VisualOdometry::setRef3DPoints() {

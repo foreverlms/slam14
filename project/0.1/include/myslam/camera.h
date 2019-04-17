@@ -1,8 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "myslam/common_include.h"
-#include <myslam/config.h>
+#include "common_include.h"
+#include "myslam/camera.h"
+#include "myslam/config.h"
 
 /**
  *小孔成像相机模型
