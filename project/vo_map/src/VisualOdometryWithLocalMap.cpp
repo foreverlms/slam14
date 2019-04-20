@@ -11,7 +11,7 @@
 namespace myslam
 {
 
-VisualOdometryWithLocalMap::VisualOdometryWithLocalMap() : VisualOdometry(), matcher_flann(new cv::flann::LshIndexParams(5, 10, 2))
+VisualOdometryWithLocalMap::VisualOdometryWithLocalMap() : VisualOdometry::VisualOdometry(), matcher_flann(new cv::flann::LshIndexParams(5, 10, 2))
 {
     map_point_erase_ratio = Config::get<double>("map_point_erasse_ratio");
 }
@@ -32,6 +32,9 @@ void VisualOdometryWithLocalMap::addKeyFrame()
             //TODO: 这里n是干嘛的？
             Vector3d n = p_w - ref->getCameraCenter();
             n.normalize();
+            //这里应该传入descripto.roe(i).clone()才能避免出错
+            //不clone导致地图点一直持有descriptors_curr.row(i)的引用,所以第一次featurematching中desp_map与
+            //descriptors_curr里面是一模一样的,导致inliers为0,visualodometry出错.
             MapPoint::Ptr map_point = MapPoint::createMapPoint(p_w, n, curr.get(), descriptors_curr.row(i));
             map->insertMapPoint(map_point);
         }
@@ -161,7 +164,7 @@ double VisualOdometryWithLocalMap::getViewAngle(Frame::Ptr frame, MapPoint::Ptr 
     //TODO: What the fuck?
     return acos(n.transpose() * point->norm);
 }
-void VisualOdometryWithLocalMap::poseEstimationPnp()
+void VisualOdometryWithLocalMap::poseEstimationPnP()
 {
     vector<cv::Point3f> pts3d;
     vector<cv::Point2f> pts2d;
@@ -175,12 +178,15 @@ void VisualOdometryWithLocalMap::poseEstimationPnp()
         pts3d.push_back(pt->getPositionCV());
     }
 
-    Mat K = (cv::Mat_<double>(3, 3) << ref->camera->fx, 0, ref->camera->cx,
+    cout << "3d点数目:" << pts3d.size() << endl;
+    cout << "2d点数目:" << pts2d.size() << endl;
+    Mat K = (cv::Mat_<double>(3, 3) << 
+             ref->camera->fx, 0, ref->camera->cx,
              0, ref->camera->fy, ref->camera->cy,
              0, 0, 1);
 
     Mat rvec, tvec, inliers;
-    cv::solvePnPRansac(pts3d, pts2d, K, Mat(), rvec, tvec, false, 100, 4.0, 0.99, inliers);
+    cv::solvePnPRansac(pts3d, pts2d, K, Mat(), rvec, tvec, false,100, 4.0, 0.99, inliers);
     num_inliers = inliers.rows;
     cout << "PnPRANSAC局类点个数：" << num_inliers << endl;
     Tcw_estimated = SE3(
@@ -221,10 +227,10 @@ void VisualOdometryWithLocalMap::poseEstimationPnp()
     optimizer.initializeOptimization();
     optimizer.optimize(10);
 
-    Tcr_estimated = SE3(pose->estimate().rotation(), pose->estimate().translation());
+    Tcw_estimated = SE3(pose->estimate().rotation(), pose->estimate().translation());
 }
 
-bool VisualOdometryWithLocalMap::checkEstimatedPose()
+bool VisualOdometryWithLocalMap::checkEstimatePose()
 {
     if (num_inliers < min_inliers)
     {
@@ -233,9 +239,9 @@ bool VisualOdometryWithLocalMap::checkEstimatedPose()
     }
 
     //这两种方式是一样的
-    // SE3 Tr_c = ref->Tcw*Tcw_estimated.inverse();
-    SE3 Tc_r = Tcw_estimated.inverse() * ref->Tcw.inverse();
-    Sophus::Vector6d d = Tc_r.log();
+    SE3 Tr_c = ref->Tcw*Tcw_estimated.inverse();
+    // SE3 Tc_r = Tcw_estimated * ref->Tcw.inverse();
+    Sophus::Vector6d d = Tr_c.log();
     if (d.norm() > 5.0)
     {
         cout << "本次位姿估计太大，失效！" << endl;
@@ -245,8 +251,9 @@ bool VisualOdometryWithLocalMap::checkEstimatedPose()
 }
 bool VisualOdometryWithLocalMap::checkKeyFrame()
 {
-    SE3 Tc_r = Tcw_estimated.inverse() * ref->Tcw.inverse();
-    Sophus::Vector6d d = Tc_r.log();
+    SE3 Tr_c = ref->Tcw * Tcw_estimated.inverse();
+    // SE3 Tc_r = Tcw_estimated * ref->Tcw.inverse();
+    Sophus::Vector6d d = Tr_c.log();
     Vector3d trans = d.head<3>();
     Vector3d rot = d.tail<3>();
     //是否满足关键帧的条件
@@ -266,13 +273,14 @@ void VisualOdometryWithLocalMap::featureMatching()
         MapPoint::Ptr &p = allpoints.second;
         if (curr->isInFrame(p->pos))
         {
-            //p在当前帧里出现过，次数加一
+            //地图里已有点在当前帧中出现
             p->visible_times++;
             candidate.push_back(p);
             desp_map.push_back(p->descriptor);
         }
     }
 
+    //将地图中已有特征点点与当前帧里的特征点进行匹配
     matcher_flann.match(desp_map, descriptors_curr, matches);
     float min_dis = std::min_element(matches.begin(), matches.end(), [](const cv::DMatch &m1, const cv::DMatch &m2) { return m1.distance < m2.distance; })->distance;
 
@@ -289,6 +297,7 @@ void VisualOdometryWithLocalMap::featureMatching()
             match_2d_kp_index.push_back(m.trainIdx);
         }
     }
+    cout << descriptors_curr.rows << endl;
     cout << "优良匹配点个数：" << match_3dpts.size() << endl;
     cout << "匹配耗时：" << timer.elapsed() << endl;
 }

@@ -118,7 +118,6 @@ namespace myslam {
     void VisualOdometry::poseEstimationPnP() {
         vector<cv::Point3f> pts3D;
         vector<cv::Point2f> pts2D;
-
         for (auto m : feature_matches) {
             //这里正确
             pts3D.push_back(pts_3d_ref[m.queryIdx]);
@@ -130,12 +129,11 @@ namespace myslam {
                 0, ref->camera->fy, ref->camera->cy,
                 0, 0, 1);
         Mat rvec, tvec, inliers;//旋转向量，平移向量
-
+        
         //solvePnpRansac在PnP求解之前进行了Ransac处理，更准确．
         cv::solvePnPRansac(pts3D, pts2D, K, Mat(), rvec, tvec, false, 100, 4.0, 0.99, inliers);
         num_inliers = inliers.rows;
         cout << "pnp方法的局内点是：" << num_inliers << "个" << endl;
-
         Tcr_estimated = SE3(SO3(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0)),
                             Eigen::Vector3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
 

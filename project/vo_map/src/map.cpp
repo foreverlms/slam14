@@ -16,7 +16,7 @@ void Map::insertKeyFrame(Frame::Ptr frame)
 }
 void Map::insertMapPoint(MapPoint::Ptr point)
 {
-    std::cout << "现有" << map_points.size() << "个路标点。" << '\n';
+    std::cout << "现有" << map_points.size()+1 << "个路标点。" << '\n';
     if (map_points.find(point->id) == map_points.end())
     {
         map_points.insert(make_pair(point->id, point));

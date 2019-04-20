@@ -74,7 +74,6 @@ int main(int argc,char** argv){
         frame->color = color;
         frame->depth = depth;
         frame->time_stamp = rgb_times[i];
-        
         boost::timer timer;
         vo->addFrame(frame);
         cout << "视觉里程计耗时：" << timer.elapsed() << endl;
@@ -97,7 +96,6 @@ int main(int argc,char** argv){
                     Tcw.translation()(1,0),
                     Tcw.translation()(2,0))
         );
-
         cv::imshow("image",color);
         cv::waitKey(1);
         vis.setWidgetPose("camera",M);

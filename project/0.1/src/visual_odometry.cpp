@@ -120,11 +120,14 @@ namespace myslam {
         vector<cv::Point3f> pts3D;
         vector<cv::Point2f> pts2D;
 
+
         for (auto m : feature_matches) {
             //这里正确
             pts3D.push_back(pts_3d_ref[m.queryIdx]);
             pts2D.push_back(kps_curr[m.trainIdx].pt);
         }
+
+        cout << "数目:" << pts3D.size() << endl;
 
         //相机矩阵K
         Mat K = (cv::Mat_<double>(3, 3) << ref->camera->fx, 0, ref->camera->cx,

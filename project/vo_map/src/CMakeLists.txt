@@ -5,7 +5,7 @@ add_library(myslam SHARED
                     camera.cpp 
                     config.cpp 
                     g2o_types.cpp
-                    visual_odometry.cpp
-                    VisualOdometryWithLocalMap.cpp) 
+                    VisualOdometryWithLocalMap.cpp
+                    visual_odometry.cpp) 
 
 target_link_libraries(myslam ${THIRD_PARTY_LIBS})
