@@ -35,7 +35,7 @@ void VisualOdometryWithLocalMap::addKeyFrame()
             //这里应该传入descripto.roe(i).clone()才能避免出错
             //不clone导致地图点一直持有descriptors_curr.row(i)的引用,所以第一次featurematching中desp_map与
             //descriptors_curr里面是一模一样的,导致inliers为0,visualodometry出错.
-            MapPoint::Ptr map_point = MapPoint::createMapPoint(p_w, n, curr.get(), descriptors_curr.row(i));
+            MapPoint::Ptr map_point = MapPoint::createMapPoint(p_w, n, curr.get(), descriptors_curr.row(i).clone());
             map->insertMapPoint(map_point);
         }
     }
@@ -285,7 +285,7 @@ void VisualOdometryWithLocalMap::featureMatching()
     float min_dis = std::min_element(matches.begin(), matches.end(), [](const cv::DMatch &m1, const cv::DMatch &m2) { return m1.distance < m2.distance; })->distance;
 
     match_3dpts.clear();
-    match_2d_kp_index.clear();
+    match_2d_kp_index.clear();                                                                                                                                                                                                                                                                      
 
     for (cv::DMatch &m : matches)
     {
@@ -297,7 +297,6 @@ void VisualOdometryWithLocalMap::featureMatching()
             match_2d_kp_index.push_back(m.trainIdx);
         }
     }
-    cout << descriptors_curr.rows << endl;
     cout << "优良匹配点个数：" << match_3dpts.size() << endl;
     cout << "匹配耗时：" << timer.elapsed() << endl;
 }
