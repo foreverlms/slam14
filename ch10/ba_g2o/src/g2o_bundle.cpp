@@ -179,7 +179,6 @@ void SolveProblem(const char *filename, const BundleParams &params){
     std::cout << "开始进行图优化..." << std::endl;
     optimizer.initializeOptimization();
     optimizer.setVerbose(true);
-    optimizer.optimize(params.num_iterations);
     std::cout << "结束图优化." << std::endl;
 
     WriteToBALProblem(&bal_problem,&optimizer);
