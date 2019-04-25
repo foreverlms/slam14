@@ -81,8 +81,12 @@ class EdgeObservationBAL : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, Vertex
             Eigen::Matrix<double,Dimension,VertexCameraBAL::Dimension,Eigen::RowMajor> dError_dCamera;
             Eigen::Matrix<double,Dimension,VertexPointBAL::Dimension,Eigen::RowMajor> dError_dPoint;
 
-            double* parameters[] = {const_cast<double*>(cam->estimate().data())};
+            // double* parameters[] = {const_cast<double*>(cam->estimate().data())};
+            //这里忘记把点也加入,导致后面求导出错,也就出现图优化结束不了的状况了
+            double *parameters[] = {const_cast<double *>(cam->estimate().data()),const_cast<double*>(point->estimate().data())};
+
             const_cast<double*>(point->estimate().data());
+
 
             double* jacobians[] = {dError_dPoint.data(),dError_dPoint.data()};
             double value[Dimension];
