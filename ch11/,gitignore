@@ -1,0 +1,4 @@
+build/
+.vscode/
+result.g2o
+sphere.g2o

@@ -5,3 +5,11 @@
 * BA
     * g2o
     * ceres
+
+```plaintext
+.
+├── ba_ceres
+├── ba_g2o
+├── common
+└── README.md
+```
