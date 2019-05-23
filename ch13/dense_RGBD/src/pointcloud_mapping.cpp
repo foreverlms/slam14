@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     }
 
 
-    //获取每一张图片的相机与
+    //获取每一张图片的相机与位姿
     for (int i = 0; i < 5; i++)
     {
         boost::format fmt("./%s/%d.%s");
